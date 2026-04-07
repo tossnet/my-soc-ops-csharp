@@ -1,0 +1,138 @@
+@page "/icebreaker-bingo"
+
+<PageTitle>Tech Life Bingo</PageTitle>
+
+<div class="flex flex-col items-center min-h-full py-6 px-4">
+    <div class="mb-6 text-center">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">🎲 Tech Life Bingo</h1>
+        <p class="text-gray-500 mb-4">
+            Find someone who matches each square — get 5 in a row to win!
+        </p>
+
+        @if (hasBingo)
+        {
+            <div class="mb-4 px-6 py-3 bg-marked text-white rounded-xl font-bold text-xl">
+                🎉 BINGO! You did it!
+            </div>
+        }
+
+        <button class="px-6 py-2 bg-accent text-white rounded-lg font-semibold transition-colors duration-150"
+                @onclick="ShuffleBoard">
+            🔀 New Card
+        </button>
+    </div>
+
+    <div class="grid grid-cols-5 gap-2 w-full" style="max-width: 560px;">
+        @for (int i = 0; i < board.Length; i++)
+        {
+            var index = i;
+            var cell = board[index];
+            <div class="aspect-square flex items-center justify-center text-center p-2 rounded-lg shadow-sm cursor-pointer @GetCellClass(cell)"
+                 @onclick="() => ToggleCell(index)">
+                <span class="text-xs font-semibold leading-tight">
+                    @(cell.IsFree ? "⭐ FREE" : cell.Text)
+                </span>
+            </div>
+        }
+    </div>
+
+    <p class="mt-4 text-xs text-gray-500">Click squares to mark them. First to get 5 in a row wins!</p>
+</div>
+
+@code {
+    private class BingoCell
+    {
+        public string Text { get; init; } = string.Empty;
+        public bool IsFree { get; init; }
+        public bool IsMarked { get; set; }
+
+        public BingoCell(string text, bool isFree = false)
+        {
+            Text = text;
+            IsFree = isFree;
+            IsMarked = isFree;
+        }
+    }
+
+    private BingoCell[] board = Array.Empty<BingoCell>();
+    private bool hasBingo;
+
+    private static readonly string[] TechLifeQuestions = new[]
+    {
+        // Easy – gimmes (majority of squares for accessibility)
+        "Has written 'Hello World' in 3+ languages",
+        "Prefers dark mode in their IDE",
+        "Uses keyboard shortcuts regularly",
+        "Has Googled syntax they should know by heart",
+        "Has blamed a bug on 'works on my machine'",
+        "Has copy-pasted code from Stack Overflow today",
+        "Drinks coffee or tea while coding",
+        "Has 10+ browser tabs open right now",
+        "Uses VS Code as their main editor",
+        "Has auto-saved before even thinking about it",
+        "Has committed with the message 'fix' or 'wip'",
+        "Names variables 'temp', 'data', or 'foo'",
+        // Medium
+        "Has a strong opinion on tabs vs. spaces",
+        "Uses Git for personal side projects",
+        "Can explain what CI/CD stands for",
+        "Has stayed up past midnight debugging",
+        "Has rage-quit an IDE at least once",
+        "Has custom aliases in .bashrc or .zshrc",
+        "Can spot an off-by-one error instantly",
+        "Has coded in 3+ programming languages",
+        // Bold / Action
+        "Has contributed to open source (typos count!)",
+        "Teach a 5-second coding trick — do it now!",
+        "Rock–paper–scissors with someone using the same IDE",
+        "Share your most controversial developer opinion"
+    };
+
+    protected override void OnInitialized()
+    {
+        ShuffleBoard();
+    }
+
+    private void ShuffleBoard()
+    {
+        var shuffled = TechLifeQuestions
+            .OrderBy(_ => Random.Shared.Next())
+            .Take(24)
+            .ToArray();
+
+        var cells = shuffled.Select(q => new BingoCell(q)).ToList();
+        cells.Insert(12, new BingoCell(string.Empty, isFree: true));
+
+        board = cells.ToArray();
+        hasBingo = false;
+    }
+
+    private void ToggleCell(int index)
+    {
+        if (board[index].IsFree) return;
+        board[index].IsMarked = !board[index].IsMarked;
+        hasBingo = CheckBingo();
+    }
+
+    private bool CheckBingo()
+    {
+        if (board.Length < 25) return false;
+
+        // Check rows
+        for (int row = 0; row < 5; row++)
+            if (Enumerable.Range(0, 5).All(col => board[row * 5 + col].IsMarked)) return true;
+
+        // Check columns
+        for (int col = 0; col < 5; col++)
+            if (Enumerable.Range(0, 5).All(row => board[row * 5 + col].IsMarked)) return true;
+
+        // Check diagonals
+        if (Enumerable.Range(0, 5).All(i => board[i * 5 + i].IsMarked)) return true;
+        if (Enumerable.Range(0, 5).All(i => board[i * 5 + (4 - i)].IsMarked)) return true;
+
+        return false;
+    }
+
+    private string GetCellClass(BingoCell cell) =>
+        cell.IsMarked ? "bg-marked text-white" : "bg-white border text-gray-700";
+}
