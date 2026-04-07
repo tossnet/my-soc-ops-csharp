@@ -67,7 +67,7 @@ body::after {
 
 /* Tailwind-like utility classes */
 .h-full { height: 100%; }
-.min-h-full { 100%; }
+.min-h-full { min-height:100%; }
 .w-full { width: 100%; }
 .w-16 { width: 4rem; }
 .max-w-sm { max-width: 24rem; }
